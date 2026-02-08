@@ -769,75 +769,164 @@
         mask.on('pointertap', closeItemPanel);
         panel.addChild(mask);
 
-        // 面板背景
-        const panelBg = createRoundedRect(W - 40, 500, 16, 0x2d3436, 0.95);
-        panelBg.x = 20;
-        panelBg.y = 160;
-        panel.addChild(panelBg);
+        const panelX = 20;
+        const panelY = 100;
+        const panelW = W - 40;
+        const panelMaxH = H - 160; // 最大可用高度
+        const contentPadding = 16;
+
+        // 构建内容容器（先计算总高度）
+        const content = new PIXI.Container();
+        let cy = 0;
 
         // 标题
         const title = createText('🎒 我的背包', { fontSize: 22, fill: 0xffffff, fontWeight: 'bold' });
-        title.x = 40;
-        title.y = 175;
-        panel.addChild(title);
+        title.x = 20;
+        title.y = cy;
+        content.addChild(title);
+        cy += 40;
 
         // 道具列表
         if (gameState.items.length === 0) {
             const empty = createText('背包空空如也...', { fontSize: 16, fill: 0x999999 });
-            empty.x = 40;
-            empty.y = 220;
-            panel.addChild(empty);
+            empty.x = 20;
+            empty.y = cy;
+            content.addChild(empty);
+            cy += 32;
         } else {
             gameState.items.forEach((item, i) => {
-                const y = 220 + i * 50;
-                const itemBg = createRoundedRect(W - 80, 42, 8, 0x444444, 0.7);
-                itemBg.x = 40;
-                itemBg.y = y;
-                panel.addChild(itemBg);
+                const itemBg = createRoundedRect(panelW - 40, 42, 8, 0x444444, 0.7);
+                itemBg.x = 20;
+                itemBg.y = cy;
+                content.addChild(itemBg);
 
-                const itemText = createText(`${item.icon} ${item.name}`, { fontSize: 16, fill: 0xffffff });
-                itemText.x = 52;
-                itemText.y = y + 4;
-                panel.addChild(itemText);
+                const itemText = createText(`${item.icon} ${item.name}`, { fontSize: 16, fill: 0xffffff, wordWrapWidth: panelW - 80 });
+                itemText.x = 32;
+                itemText.y = cy + 4;
+                content.addChild(itemText);
 
-                const descText = createText(item.desc, { fontSize: 12, fill: 0xaaaaaa });
-                descText.x = 52;
-                descText.y = y + 24;
-                panel.addChild(descText);
+                const descText = createText(item.desc, { fontSize: 12, fill: 0xaaaaaa, wordWrapWidth: panelW - 80 });
+                descText.x = 32;
+                descText.y = cy + 24;
+                content.addChild(descText);
+
+                cy += 50;
             });
         }
+
+        // 分割线
+        cy += 8;
+        const divider = new PIXI.Graphics();
+        divider.beginFill(0x555555, 0.5);
+        divider.drawRect(20, cy, panelW - 40, 1);
+        divider.endFill();
+        content.addChild(divider);
+        cy += 12;
 
         // Buff区域
         const buffTitle = createText('✨ 状态效果', { fontSize: 18, fill: 0xffffff, fontWeight: 'bold' });
-        buffTitle.x = 40;
-        buffTitle.y = Math.min(220 + gameState.items.length * 50 + 20, 470);
-        panel.addChild(buffTitle);
+        buffTitle.x = 20;
+        buffTitle.y = cy;
+        content.addChild(buffTitle);
+        cy += 30;
 
         if (gameState.buffs.length === 0) {
             const noBuff = createText('暂无状态效果', { fontSize: 14, fill: 0x999999 });
-            noBuff.x = 40;
-            noBuff.y = buffTitle.y + 30;
-            panel.addChild(noBuff);
+            noBuff.x = 20;
+            noBuff.y = cy;
+            content.addChild(noBuff);
+            cy += 28;
         } else {
             gameState.buffs.forEach((buff, i) => {
-                const y = buffTitle.y + 30 + i * 36;
                 const dur = buff.duration === -1 ? '永久' : `${buff.duration}轮`;
-                const buffText = createText(`${buff.name} [${dur}]`, { fontSize: 14, fill: 0xf39c12 });
-                buffText.x = 52;
-                buffText.y = y;
-                panel.addChild(buffText);
+                const buffText = createText(`${buff.name} [${dur}]`, { fontSize: 14, fill: 0xf39c12, wordWrapWidth: panelW - 80 });
+                buffText.x = 32;
+                buffText.y = cy;
+                content.addChild(buffText);
 
-                const buffDesc = createText(buff.desc, { fontSize: 11, fill: 0x888888 });
-                buffDesc.x = 52;
-                buffDesc.y = y + 18;
-                panel.addChild(buffDesc);
+                const buffDesc = createText(buff.desc, { fontSize: 11, fill: 0x888888, wordWrapWidth: panelW - 80 });
+                buffDesc.x = 32;
+                buffDesc.y = cy + 18;
+                content.addChild(buffDesc);
+
+                cy += 40;
             });
         }
 
-        // 关闭按钮
+        const contentTotalH = cy + contentPadding;
+        const panelH = Math.min(contentTotalH + contentPadding * 2 + 40, panelMaxH);
+        const scrollable = contentTotalH > panelH - 40;
+
+        // 面板背景
+        const panelBg = createRoundedRect(panelW, panelH, 16, 0x2d3436, 0.95);
+        panelBg.x = panelX;
+        panelBg.y = panelY;
+        panel.addChild(panelBg);
+
+        // 内容区域（可滚动）
+        content.x = panelX;
+        content.y = panelY + contentPadding;
+        panel.addChild(content);
+
+        // 如果内容超出面板，用 mask 裁剪 + 拖拽滚动
+        if (scrollable) {
+            const clipMask = new PIXI.Graphics();
+            clipMask.beginFill(0xffffff);
+            clipMask.drawRoundedRect(panelX, panelY + contentPadding, panelW, panelH - contentPadding * 2 - 36, 12);
+            clipMask.endFill();
+            panel.addChild(clipMask);
+            content.mask = clipMask;
+
+            const minY = panelY + contentPadding - (contentTotalH - (panelH - contentPadding * 2 - 36));
+            const maxY = panelY + contentPadding;
+
+            // 滚动条指示
+            const scrollBarH = Math.max(30, (panelH - 80) * ((panelH - 80) / contentTotalH));
+            const scrollTrackH = panelH - 80;
+            const scrollBar = new PIXI.Graphics();
+            scrollBar.beginFill(0xffffff, 0.3);
+            scrollBar.drawRoundedRect(0, 0, 4, scrollBarH, 2);
+            scrollBar.endFill();
+            scrollBar.x = panelX + panelW - 10;
+            scrollBar.y = panelY + 40;
+            panel.addChild(scrollBar);
+
+            function updateScrollBar() {
+                const progress = (maxY - content.y) / (maxY - minY);
+                scrollBar.y = panelY + 40 + progress * (scrollTrackH - scrollBarH);
+            }
+
+            // 触摸/鼠标拖拽滚动
+            let dragging = false;
+            let dragStartY = 0;
+            let contentStartY = 0;
+
+            panelBg.eventMode = 'static';
+            panelBg.on('pointerdown', (e) => {
+                dragging = true;
+                dragStartY = e.global.y;
+                contentStartY = content.y;
+            });
+            panelBg.on('pointermove', (e) => {
+                if (!dragging) return;
+                const dy = e.global.y - dragStartY;
+                content.y = clamp(contentStartY + dy, minY, maxY);
+                updateScrollBar();
+            });
+            panelBg.on('pointerup', () => { dragging = false; });
+            panelBg.on('pointerupoutside', () => { dragging = false; });
+
+            // 滚动提示
+            const scrollHint = createText('↕ 上下滑动查看更多', { fontSize: 11, fill: 0x666666 });
+            scrollHint.x = panelX + panelW / 2 - scrollHint.width / 2;
+            scrollHint.y = panelY + panelH - 28;
+            panel.addChild(scrollHint);
+        }
+
+        // 关闭按钮（固定在面板右上角）
         const closeBtn = createText('✕ 关闭', { fontSize: 16, fill: 0xff6b6b });
-        closeBtn.x = W - 100;
-        closeBtn.y = 175;
+        closeBtn.x = panelX + panelW - 70;
+        closeBtn.y = panelY + 8;
         closeBtn.eventMode = 'static';
         closeBtn.cursor = 'pointer';
         closeBtn.on('pointertap', closeItemPanel);

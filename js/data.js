@@ -547,7 +547,7 @@ const GAME_DATA = {
         3035: {
             id: 3035,
             chapter: "living",
-            text: "第二天早上，阳光透过窗帘照进来。你被手机震醒——接下来几天，好几件事会接踵而来……\n\n（将按随机顺序依次经历：房东来电、房间异味、好友帮忙）",
+            text: "第二天早上，阳光透过窗帘照进来。你被手机震醒——接下来几天，好几件事会接踵而来……",
             scene: "room_morning",
             options: [
                 { text: "☀️ 开始经历这些事", next: "branch_sequence_start" }
