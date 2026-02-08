@@ -9,18 +9,18 @@ const GAME_DATA = {
         1001: {
             id: 1001,
             chapter: "finding",
-            text: "你拖着行李箱站在地铁口，手机上的租房App弹出一条消息：\n\n「阳光大床房，近地铁，仅需800/月！」\n\n这价格...在这个城市简直像做梦。",
+            text: "你拖着行李箱站在上海地铁2号线出口，梅雨季节的空气潮湿闷热。手机上的租房App弹出一条消息：\n\n「静安寺朝南一室户，近地铁，仅需800/月！」\n\n这价格...在魔都简直像做梦。",
             scene: "subway",
             options: [
                 { text: "📱 立刻联系房东", next: 1002 },
                 { text: "🔍 继续刷其他房源", next: 1003 },
-                { text: "🗣️ 问旁边的大爷附近房租行情", check: "charisma", difficulty: 40, success: 1004, fail: 1005 }
+                { text: "🗣️ 问旁边的老爷叔附近房租行情", check: "charisma", difficulty: 40, success: 1004, fail: 1005 }
             ]
         },
         1002: {
             id: 1002,
             chapter: "finding",
-            text: "你拨通了电话，对面传来一个油腻的声音：\n\n「嗨～亲，我是金牌中介小王！那套房子呢，今天刚好有人退租，你要不要现在就来看？就在xxx小区。」\n\n语速飞快，不给你思考时间。",
+            text: "你拨通了电话，对面传来一个油腻的声音：\n\n「嗨～亲，我是链家金牌经纪人小王！那套房子就在徐汇老洋房，今天刚空出来，你要不要现在就来看？旁边就是徐家汇书院，文艺得很！」\n\n语速飞快，不给你思考时间。",
             scene: "phone",
             options: [
                 { text: "🏃 马上去看房", next: 1010 },
@@ -31,32 +31,32 @@ const GAME_DATA = {
         1003: {
             id: 1003,
             chapter: "finding",
-            text: "你继续刷着手机，眼前闪过各种房源：\n\n有的照片明显P过，有的价格高得离谱，有的描述写着「仅限女生/情侣」...\n\n刷了半小时，你觉得脖子有点酸。",
+            text: "你继续刷着手机，眼前闪过各种房源：\n\n「静安寺老破小，押一付三，仅限女生」\n「陆家嘴隔断间，朝北，月租3500」\n「田子坊石库门阁楼，复古风情，2400」...\n\n刷了半小时，你觉得脖子有点酸。",
             scene: "street",
             effects: { energy: -1 },
             options: [
                 { text: "💪 继续刷，不信找不到好房", next: 1008 },
-                { text: "☕ 先找个咖啡店坐下来慢慢找", next: 1009, effects: { money: -1 } },
+                { text: "☕ 先去Manner坐下来慢慢找", next: 1009, effects: { money: -1 } },
                 { text: "📱 回头联系刚才那个800的房子", next: 1002 }
             ]
         },
         1004: {
             id: 1004,
             chapter: "finding",
-            text: "大爷热情地拉着你的手：\n\n「年轻人，这附近最便宜也得1500！800块？那八成是隔断间或者地下室！我跟你说，前面巷子里有个阿婆自己出租，价格公道...」\n\n大爷掏出一张皱巴巴的纸条递给你。",
+            text: "老爷叔热情地拉着你的手：\n\n「小阿弟，侬不晓得，上海这地方最便宜也要两千多！八百块？要么是群租房要么阁楼间！我跟侬讲，前面弄堂里有个老阿姨自己出租，就住宛平南路那边，价格蛮公道的...」\n\n老爷叔掏出一张皱巴巴的纸条递给你。",
             scene: "street",
             effects: { charisma: 1 },
             gainItem: "granny_note",
             options: [
-                { text: "📝 收好纸条，去找阿婆", next: 1011 },
-                { text: "🙏 谢过大爷，还是先看看800的房子", next: 1002 },
+                { text: "📝 收好纸条，去找老阿姨", next: 1011 },
+                { text: "🙏 谢过老爷叔，还是先看看800的房子", next: 1002 },
                 { text: "📱 同时记下两个联系方式", next: 1010, effects: { charisma: 1 } }
             ]
         },
         1005: {
             id: 1005,
             chapter: "finding",
-            text: "大爷警惕地看了你一眼：\n\n「问什么问！你是不是中介派来探价的？走走走！」\n\n你被大爷的气势吓退，灰溜溜地走了。看来搭话技巧还需要提升啊...",
+            text: "老爷叔警惕地看了你一眼：\n\n「问东问西的！侬是中原地产派来探底价的伐？走走走！」\n\n你被老爷叔的气势吓退，灰溜溜地走了。看来搭话技巧还需要提升啊...",
             scene: "street",
             effects: { mood: -1 },
             options: [
@@ -90,7 +90,7 @@ const GAME_DATA = {
         1008: {
             id: 1008,
             chapter: "finding",
-            text: "功夫不负有心人！你发现了一个看起来靠谱的房源：\n\n「合租·温馨两居·真实图片·1200/月·押一付一」\n\n评论区有人说房东是个和蔼的退休阿姨。",
+            text: "功夫不负有心人！你发现了一个看起来靠谱的房源：\n\n「普陀老破小·两室户·真实图片·2200/月·押一付三·近地铁11号线」\n\n评论区有人说房东是个和善的徐汇老阿姨。",
             scene: "street",
             effects: { mood: 1 },
             options: [
@@ -101,7 +101,7 @@ const GAME_DATA = {
         1009: {
             id: 1009,
             chapter: "finding",
-            text: "你走进一家咖啡店，要了杯最便宜的美式。\n\n正当你低头刷手机时，邻桌有人在打电话：\n「...对，那个房子空了三个月了，房东急着租出去，你去砍砍价肯定能便宜...」\n\n你竖起了耳朵。",
+            text: "你走进淮海路一家Manner咖啡店，要了杯15块的美式。\n\n正当你低头刷手机时，邻桌有人在打电话：\n「...对，那个房子在武康大楼旁边，空了三个月了，房东急着租出去，你去砍砍价肯定能便宜...」\n\n你竖起了耳朵。",
             scene: "coffee",
             options: [
                 { text: "👂 假装去倒水，靠近偷听地址", check: "charisma", difficulty: 45, success: 1016, fail: 1017 },
@@ -113,7 +113,7 @@ const GAME_DATA = {
         1010: {
             id: 1010,
             chapter: "finding",
-            text: "你按照地址找到了小区。\n\n一个穿着花格子衬衫、头发梳得油亮的年轻人已经在门口等你了，胸前挂着「金牌经纪人」的工牌。\n\n「来来来，跟我上楼！你运气好，这套房抢手得很！」",
+            text: "你按照地址找到了老公房小区。\n\n一个穿着格子衬衫、头发梳得油亮的年轻人已经在门口等你了，胸前挂着「我爱我家·金牌经纪人」的工牌。\n\n「来来来，跟我上楼！侬运气老好的，这套房子老抢手的，今天已经有三拨人看过了！」",
             scene: "building",
             options: [
                 { text: "🚶 跟着上楼看房", next: 2001 },
@@ -124,11 +124,11 @@ const GAME_DATA = {
         1011: {
             id: 1011,
             chapter: "finding",
-            text: "你拨通了号码，接电话的是一位嗓音温柔的阿婆：\n\n「哦～找房子呀！我这有个小单间，干净的呢！1100一个月，你来看看嘛。就在幸福路18号。」\n\n听起来很靠谱！",
+            text: "你拨通了号码，接电话的是一位嗓音温柔的上海阿姨：\n\n「喂～侬找房子呀？阿拉这边有个朝北小单间，老清爽的哦！两千一个月，侬来看看伐？就在宛平南路600号那边。」\n\n听起来很靠谱！",
             scene: "phone",
             effects: { mood: 1 },
             options: [
-                { text: "🏠 马上去幸福路看房", next: 2010 },
+                { text: "🏠 马上去宛平南路看房", next: 2010 },
                 { text: "💬 多问问房子的情况", next: 1020 }
             ]
         },
@@ -157,7 +157,7 @@ const GAME_DATA = {
         1014: {
             id: 1014,
             chapter: "finding",
-            text: "你仔细观察了周边环境：\n\n✅ 距离地铁站步行8分钟\n✅ 楼下有超市和菜市场\n✅ 小区看起来管理不错\n⚠️ 不过隔壁在施工，可能会有噪音\n\n整体来说还可以！",
+            text: "你仔细观察了周边环境：\n\n✅ 距离地铁11号线步行8分钟\n✅ 楼下有联华超市和生煎店\n✅ 弄堂口有爷叔在下象棋\n⚠️ 不过隔壁好像在改造石库门，可能会有噪音\n\n整体来说还可以！",
             scene: "street",
             effects: { handy: 1, mood: 1 },
             options: [
@@ -179,13 +179,13 @@ const GAME_DATA = {
         1016: {
             id: 1016,
             chapter: "finding",
-            text: "你成功听到了关键信息！\n\n那个人说的是「阳光花园小区3号楼」，房东姓李，因为出国急租。\n\n这可能是个捡漏的好机会！",
+            text: "你成功听到了关键信息！\n\n那个人说的是「愚园路老洋房」，房东姓李，因为要移民加拿大急租，价格好商量。\n\n这可能是个捡漏的好机会！",
             scene: "coffee",
             effects: { charisma: 1 },
             gainItem: "secret_address",
             options: [
-                { text: "🏃 立刻去阳光花园看看", next: 2010 },
-                { text: "📱 先在网上查查这个小区", next: 1008 }
+                { text: "🏃 立刻去愚园路看看", next: 2010 },
+                { text: "📱 先在网上查查这个地段", next: 1008 }
             ]
         },
         1017: {
@@ -222,11 +222,11 @@ const GAME_DATA = {
         1020: {
             id: 1020,
             chapter: "finding",
-            text: "阿婆耐心地告诉你：\n\n「房子是朝南的，有个小阳台可以晒衣服。就是楼层高了点，6楼没电梯。但是锻炼身体嘛！」\n\n听起来除了没电梯其他都不错。",
+            text: "上海阿姨耐心地告诉你：\n\n「阿拉房子是朝南的哟，有个小阳台可以晒衣裳。就是楼层高了点，六楼没电梯。不过年轻人爬爬楼梯锻炼锻炼身体嘛！」\n\n听起来除了没电梯其他都不错。",
             scene: "phone",
             options: [
-                { text: "🏠 6楼算什么！去看房", next: 2010 },
-                { text: "😓 6楼没电梯...算了吧", next: 1003, effects: { energy: -1 } }
+                { text: "🏠 六楼算什么！去看房", next: 2010 },
+                { text: "😓 六楼没电梯...算了吧", next: 1003, effects: { energy: -1 } }
             ]
         },
 
@@ -234,7 +234,7 @@ const GAME_DATA = {
         2001: {
             id: 2001,
             chapter: "signing",
-            text: "推开门的瞬间，你惊呆了：\n\n这哪是什么「阳光大床房」！分明是用石膏板隔出来的一个小格子，窗户对着隔壁楼的墙，采光约等于零。\n\n角落里还摆着上个租客留下的旧床垫，散发着一股说不清的味道...",
+            text: "推开门的瞬间，你惊呆了：\n\n这哪是什么「静安寺朝南一室户」！分明是用石膏板隔出来的群租房格子间，窗户对着隔壁楼的墙，采光约等于零。\n\n角落里还摆着上个租客留下的旧床垫，散发着一股梅雨季的霉味...",
             scene: "room_bad",
             effects: { mood: -2 },
             options: [
@@ -337,30 +337,30 @@ const GAME_DATA = {
         2010: {
             id: 2010,
             chapter: "signing",
-            text: "你来到了幸福路18号。\n\n开门的是一位笑眯眯的阿婆。房间虽然不大但干净整洁，阳台上还养着几盆花。\n\n「你看看喜不喜欢？我不收中介费的，直接跟我签就好。」",
+            text: "你来到了宛平南路600号。\n\n开门的是一位笑眯眯的上海阿姨，穿着真丝衬衫，烫着卷发。房间虽然不大但收拾得干干净净，阳台上还养着几盆茉莉花。\n\n「来，进来坐坐！阿拉不收中介费的，直接跟阿拉签就好。」",
             scene: "room_good",
             effects: { mood: 2 },
             options: [
                 { text: "😍 太好了！立刻签约！", next: 2011 },
-                { text: "💬 能便宜点吗？", check: "charisma", difficulty: 50, success: 2012, fail: 2013 },
+                { text: "💬 阿姨，房租能便宜点伐？", check: "charisma", difficulty: 50, success: 2012, fail: 2013 },
                 { text: "🔍 先仔细检查一下房子", check: "handy", difficulty: 40, success: 2014, fail: 2011 }
             ]
         },
         2011: {
             id: 2011,
             chapter: "signing",
-            text: "阿婆拿出一份简单的租房合同，条款清晰合理。\n\n「押一付一就好了，有什么问题随时找我，我就住楼下。」\n\n签好合同，拿到钥匙。你终于有个温暖的小窝了！",
+            text: "阿姨拿出一份手写的租房协议，条款清清楚楚：\n\n「押一付三，水电煤按账单付，有啥问题随时来敲阿拉门，阿拉就住楼下。」\n\n签好协议，阿姨还塞给你两个生煎包：「肯定饿了吧，趁热吃！」\n\n你终于在这个城市有了个温暖的小窝！",
             scene: "room_good",
             effects: { money: -2, mood: 2 },
-            addBuff: { id: "kind_landlord", name: "慈祥房东", desc: "房东阿婆人很好，心情+1", duration: -1, effect: { mood: 1 } },
+            addBuff: { id: "kind_landlord", name: "慈祥上海阿姨", desc: "房东阿姨人很好，心情+1", duration: -1, effect: { mood: 1 } },
             options: [
-                { text: "🏠 开始新生活！", next: 3001 }
+                { text: "🏠 开始魔都新生活！", next: 3001 }
             ]
         },
         2012: {
             id: 2012,
             chapter: "signing",
-            text: "阿婆想了想：\n\n「你这孩子会说话！好吧，1000一个月，不能再少了。不过你要帮我偶尔浇浇花哦～」\n\n成功砍价100！",
+            text: "阿姨想了想，用上海话笑着说：\n\n「哎哟，小阿弟/小阿妹嘴巴老甜的嘛！好好好，一千九一个月，再低真的不行了。不过侬要帮阿拉偶尔浇浇花哦～阿拉那几盆茉莉花金贵的！」\n\n成功砍价一百块！",
             scene: "room_good",
             effects: { charisma: 1, money: 1, mood: 1 },
             options: [
@@ -370,7 +370,7 @@ const GAME_DATA = {
         2013: {
             id: 2013,
             chapter: "signing",
-            text: "阿婆摇摇头：\n\n「1100已经很便宜啦！外面都要1500呢。不过你要是住满一年，最后一个月免租金。」\n\n嗯，也不错。",
+            text: "阿姨摇摇头：\n\n「小阿弟/小阿妹，两千块在宛平南路这边已经很便宜啦！外面都要两千五呢。不过呢，侬要是住满一年，最后一个月阿拉不收钱，算送你的！」\n\n嗯，也不错。",
             scene: "room_good",
             options: [
                 { text: "👌 好的，就这个价", next: 2011 },
@@ -393,10 +393,10 @@ const GAME_DATA = {
         3001: {
             id: 3001,
             chapter: "living",
-            text: "搬家第一天。你终于安顿好了行李。\n\n正准备休息，突然听到门外有人按门铃。\n\n打开门，一个扎着马尾的女孩笑着说：\n「嗨！我是你隔壁的室友小林！欢迎入住～要不要一起吃个饭？」",
+            text: "搬家第一天。你终于把行李从货拉拉上搬进了六楼。\n\n正准备休息，突然听到门外有人敲门。\n\n打开门，一个戴眼镜的男生笑着说：\n「哟，新邻居啊！我是隔壁IT公司的小张，310室的。刚搬来啊？晚上要不要一起去楼下吃小杨生煎？」",
             scene: "hallway",
             options: [
-                { text: "😊 好啊！正好还没吃饭", next: 3002, effects: { mood: 1 } },
+                { text: "😊 好啊！正好饿死了", next: 3002, effects: { mood: 1 } },
                 { text: "😅 谢谢，但我想先整理一下", next: 3003 },
                 { text: "🗣️ 聊聊这栋楼有什么要注意的", check: "charisma", difficulty: 30, success: 3004, fail: 3002 }
             ]
@@ -404,7 +404,7 @@ const GAME_DATA = {
         3002: {
             id: 3002,
             chapter: "living",
-            text: "你和小林去楼下的麻辣烫店吃了一顿。\n\n她告诉你，这栋楼的Wi-Fi密码是「88888888」，垃圾要分类，还有——\n\n「三楼的那个大叔有点怪，总是半夜在走廊走来走去，你别害怕就好。」",
+            text: "你和小张去楼下的小杨生煎吃了一顿。\n\n他告诉你，这栋楼的Wi-Fi密码是「88888888」，上海垃圾分类很严，干湿要分开，还有——\n\n「三楼那个老爷叔有点怪，总是半夜在走廊走来走去，说是以前纺织厂上夜班的，你别害怕就好。」",
             scene: "restaurant",
             effects: { mood: 1, money: -1 },
             options: [
@@ -427,25 +427,25 @@ const GAME_DATA = {
         3004: {
             id: 3004,
             chapter: "living",
-            text: "小林热情地跟你分享了各种情报：\n\n🔑 快递放在楼下超市代收\n🔑 热水器别开太大，会跳闸\n🔑 WiFi密码：88888888\n🔑 物业电话贴在电梯里\n🔑 三楼大叔人其实不错，就是作息特别...\n\n这些信息太有用了！",
+            text: "小张热情地跟你分享了各种上海生存情报：\n\n🔑 快递放在楼下罗森代收\n🔑 热水器别开太大，老公房会跳闸\n🔑 WiFi密码：88888888\n🔑 物业电话贴在楼梯口\n🔑 三楼老爷叔人其实不错，就是觉少...\n🔑 周末早上有弄堂早市，菜比超市便宜\n\n这些信息太有用了！",
             scene: "hallway",
             effects: { charisma: 1, mood: 1 },
             gainItem: "neighbor_info",
             options: [
-                { text: "🍜 一起去吃个饭吧", next: 3002 },
-                { text: "👋 谢过小林，回去整理房间", next: 3003 }
+                { text: "🍜 一起去吃生煎吧", next: 3002 },
+                { text: "👋 谢过小张，回去整理房间", next: 3003 }
             ]
         },
         3005: {
             id: 3005,
             chapter: "living",
-            text: "小林压低声音说：\n\n「听说那个大叔是个夜班程序员，不过有人说他半夜会对着墙壁自言自语...\n\n之前有个租客说听到他房间传出敲打声，第二天就搬走了。」\n\n你感觉背后发凉...",
+            text: "小张压低声音说：\n\n「听说那个老爷叔以前是国棉厂的夜班工人，退休后睡不着觉...\n\n之前有个租客说听到他半夜在走廊里唱沪剧，第二天就搬走了。」\n\n你感觉背后发凉...",
             scene: "restaurant",
             effects: { mood: -1 },
-            addBuff: { id: "night_worry", name: "深夜恐惧", desc: "对三楼大叔的恐惧", duration: 3, effect: { mood: -1 } },
+            addBuff: { id: "night_worry", name: "深夜恐惧", desc: "对三楼老爷叔的恐惧", duration: 3, effect: { mood: -1 } },
             options: [
                 { text: "😱 以后晚上一定要锁好门", next: 3006 },
-                { text: "🤔 改天去跟大叔聊聊", next: 3006, effects: { mood: 1 } }
+                { text: "🤔 改天去跟老爷叔聊聊", next: 3006, effects: { mood: 1 } }
             ]
         },
         3006: {
@@ -494,12 +494,12 @@ const GAME_DATA = {
         3010: {
             id: 3010,
             chapter: "living",
-            text: "小林拿着自己的工具盒过来了：\n\n「我以前在老家经常修这些！让我来！」\n\n三下五除二就把水管修好了。你感激涕零。",
+            text: "小张拿着自己的工具盒过来了：\n\n「我在张江做IT的，这种水管小问题见多了！让我来！」\n\n三下五除二就把水管修好了。你感激涕零。",
             scene: "room",
             effects: { mood: 2 },
-            addBuff: { id: "good_neighbor", name: "好邻居", desc: "和小林成为朋友", duration: -1, effect: { mood: 1 } },
+            addBuff: { id: "good_neighbor", name: "好邻居", desc: "和小张成为朋友", duration: -1, effect: { mood: 1 } },
             options: [
-                { text: "🙏 谢谢小林！改天请你吃饭", next: 3006 }
+                { text: "🙏 谢谢小张！改天请你吃生煎", next: 3006 }
             ]
         },
         3011: {
@@ -559,12 +559,12 @@ const GAME_DATA = {
         3016: {
             id: 3016,
             chapter: "living",
-            text: "二手市场真是个宝藏！\n\n到处都是搬家甩卖的家具和电器。你在一堆旧货中翻翻找找...",
+            text: "你来到了浦东塘桥的二手家具市场，真是个宝藏地方！\n\n到处都是搬家甩卖的家具和电器，还有从拆迁的老洋房收来的 vintage 物件。你在一堆旧货中翻翻找找...",
             scene: "market",
             options: [
                 { text: "💡 买个二手台灯（花费1财力）", next: 3021, effects: { money: -1 }, gainItem: "desk_lamp" },
                 { text: "🪑 买把还不错的椅子（花费2财力）", next: 3021, effects: { money: -2, mood: 1 } },
-                { text: "🗣️ 跟老板砍个价", check: "charisma", difficulty: 45, success: 3022, fail: 3023 },
+                { text: "🗣️ 用上海话跟老板砍个价", check: "charisma", difficulty: 45, success: 3022, fail: 3023 },
                 { text: "👀 只看不买，记下有什么好东西", next: 3015, effects: { mood: 1 } }
             ]
         },
@@ -667,11 +667,11 @@ const GAME_DATA = {
         3026: {
             id: 3026,
             chapter: "living",
-            text: "你惊叫着冲出房间，差点撞到路过的小林。\n\n「怎么了怎么了？」\n「蟑...蟑螂！！！」\n\n小林淡定地拿了张纸巾走进去，三秒钟后出来：「搞定了。」\n\n你的英雄小林又一次拯救了你。",
+            text: "你惊叫着冲出房间，差点撞到路过的小张。\n\n「怎么了怎么了？」\n「蟑...蟑螂！！！」\n\n小张淡定地拿了张纸巾走进去，三秒钟后出来：「小意思，搞定了。」\n\n你的英雄小张又一次拯救了你。",
             scene: "hallway",
             effects: { mood: 1 },
             options: [
-                { text: "🙏 小林真是我的救星", next: 3015 }
+                { text: "🙏 小张真是我的救星", next: 3015 }
             ]
         },
         3027: {
@@ -834,8 +834,8 @@ const GAME_DATA = {
             id: 9200,
             chapter: "boss_landlord",
             isBoss: true,
-            bossName: "终极房东大妈",
-            text: "【最终BOSS：终极房东大妈！】\n\n租约到期了。房东大妈来做退房检查。\n\n她推开门，戴着老花镜，手里拿着一个小本本，眼神犀利如鹰。\n\n「来，我们一项一项检查。先看——墙面！」\n\n【退房检查战 - 第1项：墙面】\n怒气值：⬜⬜⬜⬜⬜",
+            bossName: "终极房东阿姨",
+            text: "【最终BOSS：终极房东阿姨！】\n\n租约到期了。房东阿姨来做退房检查。\n\n她推开门，戴着老花镜，烫着一头整齐的卷发，手里拿着一个小本本，眼神犀利如鹰。\n\n「来，阿拉一项一项检查！先看——墙面！弄堂里的房子墙面最要紧，不许有污迹！」\n\n【退房检查战 - 第1项：墙面】\n怒气值：⬜⬜⬜⬜⬜",
             scene: "room_check",
             bossRound: 1,
             bossRage: 0,
@@ -850,7 +850,7 @@ const GAME_DATA = {
             id: 9210,
             chapter: "boss_landlord",
             isBoss: true,
-            text: "房东大妈推了推眼镜：\n\n「嗯...还可以，这面墙保持得不错。」\n\n✅ 墙面检查通过！",
+            text: "房东阿姨推了推老花镜，满意地点点头：\n\n「嗯...还可以，这面墙保养得不错。阿拉以前租给过一个小年轻，墙面画得乱七八糟，扣了他一个月押金！」\n\n✅ 墙面检查通过！",
             scene: "room_check",
             effects: { mood: 1 },
             bossCheckPass: true,
@@ -862,7 +862,7 @@ const GAME_DATA = {
             id: 9220,
             chapter: "boss_landlord",
             isBoss: true,
-            text: "房东大妈的眼睛瞪大了：\n\n「这是什么！墙上怎么有划痕！你知不知道补一面墙要多少钱？！」\n\n她在小本本上重重地记了一笔。\n\n❌ 墙面检查失败！怒气+1",
+            text: "房东阿姨的眼睛瞪大了，上海话都出来了：\n\n「哎哟喂！这是什么情况！墙上怎么有划痕！侬晓得伐，阿拉这房子是老洋房，补一面墙要多少钱？！」\n\n她在小本本上重重地记了一笔。\n\n❌ 墙面检查失败！怒气+1",
             scene: "room_check",
             effects: { mood: -1, money: -1 },
             bossRagePlus: 1,
@@ -874,7 +874,7 @@ const GAME_DATA = {
             id: 9230,
             chapter: "boss_landlord",
             isBoss: true,
-            text: "你提前准备了一桶和原来一模一样的墙漆，把所有痕迹都盖住了！\n\n房东大妈仔细看了半天：「嗯，这面墙跟新的一样嘛！不错不错。」\n\n✅ 完美通过！",
+            text: "你提前准备了一桶和原来一模一样的墙漆，把所有痕迹都盖住了！\n\n房东阿姨仔细看了半天，满意地拍拍手：「嗯，这面墙跟新的一样嘛！小阿弟/小阿妹老细致的嘛！不错不错。」\n\n✅ 完美通过！",
             scene: "room_check",
             effects: { mood: 2 },
             loseItem: "wall_paint",
@@ -889,7 +889,7 @@ const GAME_DATA = {
             id: 9240,
             chapter: "boss_landlord",
             isBoss: true,
-            text: "房东大妈走到桌子前，用手指划过桌面：\n\n「家具呢？让我看看这些桌椅有没有损坏。」\n\n她弯腰检查桌腿、椅子和衣柜...\n\n【退房检查 - 第2项：家具】",
+            text: "房东阿姨走到桌子前，用手指划过桌面：\n\n「家具呢？让阿拉看看这些桌椅有没有坏掉。这可是阿拉当年陪嫁的老家具，金贵得很！」\n\n她弯腰检查桌腿、椅子和衣柜...\n\n【退房检查 - 第2项：家具】",
             scene: "room_check",
             options: [
                 { text: "🔧 提前修好了所有损坏", check: "handy", difficulty: 55, success: 9210, fail: 9220 },
@@ -901,7 +901,7 @@ const GAME_DATA = {
             id: 9250,
             chapter: "boss_landlord",
             isBoss: true,
-            text: "你之前就用万能扳手把所有松动的螺丝都拧紧了，桌椅稳固如新！\n\n房东大妈试着摇了摇桌子：「嗯，比我当初买的时候还结实！」\n\n✅ 家具检查完美通过！",
+            text: "你之前就用万能扳手把所有松动的螺丝都拧紧了，桌椅稳固如新！\n\n房东阿姨试着摇了摇桌子，眼睛一亮：「哎哟，比我当初嫁过来的时候还结实！小阿弟/小阿妹动手能力老强的嘛！」\n\n✅ 家具检查完美通过！",
             scene: "room_check",
             effects: { mood: 2, handy: 1 },
             loseItem: "wrench",
@@ -916,7 +916,7 @@ const GAME_DATA = {
             id: 9260,
             chapter: "boss_landlord",
             isBoss: true,
-            text: "房东大妈最后走进卫生间和厨房：\n\n「最后看看卫生情况...」\n\n她打开灶台、检查排水口、看了看马桶...\n\n【退房检查 - 第3项：卫生】",
+            text: "房东阿姨最后走进卫生间和厨房：\n\n「最后看看清爽伐...阿拉上海人最讲究卫生，弄堂房子里ockroach一只都不许有！」\n\n她打开灶台、检查排水口、看了看马桶...\n\n【退房检查 - 第3项：卫生】",
             scene: "room_check",
             options: [
                 { text: "🧹 我可是提前大扫除了", check: "energy", difficulty: 45, success: 9210, fail: 9220 },
@@ -928,7 +928,7 @@ const GAME_DATA = {
             id: 9270,
             chapter: "boss_landlord",
             isBoss: true,
-            text: "你之前花钱买了专业清洁套装，把房子里里外外打扫得一尘不染！\n\n房东大妈简直不敢相信：「这...比我原来打扫得还干净！」\n\n✅ 卫生检查完美通过！",
+            text: "你之前花钱买了专业清洁套装，把房子里里外外打扫得一尘不染！\n\n房东阿姨简直不敢相信，连连点头：「哎哟喂，这...比阿拉自己打扫得还清爽！小阿弟/小阿妹老有素质的嘛！」\n\n✅ 卫生检查完美通过！",
             scene: "room_check",
             effects: { mood: 3 },
             loseItem: "cleaning_kit",
@@ -942,7 +942,7 @@ const GAME_DATA = {
         9300: {
             id: 9300,
             chapter: "boss_landlord",
-            text: "房东大妈合上小本本，推了推眼镜，看着你...",
+            text: "房东阿姨合上小本本，推了推老花镜，上上下下打量着你...",
             scene: "room_check",
             isBossResult: true,
             options: []
@@ -950,7 +950,7 @@ const GAME_DATA = {
         9301: {
             id: 9301,
             chapter: "boss_landlord",
-            text: "🎉🎉🎉 【最终BOSS战胜利！】\n\n房东大妈露出了罕见的微笑：\n\n「不错不错！你是我见过最靠谱的租客！押金全额退还！」\n\n她从口袋里掏出一个红包：「这是额外的奖励，下次有好房子第一个通知你！」\n\n🏆 恭喜你成功保住了全部押金！\n租房大冒险——通关！",
+            text: "🎉🎉🎉 【最终BOSS战胜利！】\n\n房东阿姨露出了满意的笑容，用上海话夸奖你：\n\n「老灵额！侬是阿拉见过最靠谱的租客！押金一分不少全退给侬！」\n\n她从布包里掏出一个红包：「这是阿拉的一点心意，下次有宛平南路的好房子第一个通知侬！有空来家里吃本帮菜！」\n\n🏆 恭喜你成功保住了全部押金！\n上海租房大冒险——通关！",
             scene: "room_check",
             effects: { money: 5, mood: 5 },
             isEnding: true,
@@ -962,7 +962,7 @@ const GAME_DATA = {
         9302: {
             id: 9302,
             chapter: "boss_landlord",
-            text: "😤 【最终BOSS战失败...】\n\n房东大妈怒气冲天：\n\n「看看你把房子糟蹋成什么样！押金全部扣除！还要额外赔偿！」\n\n你含泪掏出了最后的积蓄...\n\n不过，这次的经验教训一定会让你下次做得更好！\n\n租房大冒险——结束。",
+            text: "😤 【最终BOSS战失败...】\n\n房东阿姨气得卷发都在抖，上海话都出来了：\n\n「看看侬把房子糟蹋成什么样子！押金一分都不退！还要额外赔偿！侬这种人阿拉以后再也不租了！」\n\n你含泪掏出了最后的积蓄...\n\n不过，这次的经验教训一定会让你下次在上海租房做得更好！\n\n上海租房大冒险——结束。",
             scene: "room_check",
             effects: { money: -5, mood: -3 },
             isEnding: true,
@@ -983,24 +983,24 @@ const GAME_DATA = {
 
     // 道具定义
     items: {
-        granny_note: { name: "阿婆的纸条", desc: "上面写着幸福路18号的电话", icon: "📝" },
-        secret_address: { name: "神秘地址", desc: "咖啡店偷听到的房源信息", icon: "🏠" },
-        earplugs: { name: "隔音耳塞", desc: "能屏蔽大部分噪音", icon: "🔇" },
+        granny_note: { name: "老爷叔的纸条", desc: "上面写着宛平南路老阿姨的电话", icon: "📝" },
+        secret_address: { name: "神秘地址", desc: "Manner咖啡偷听到的愚园路房源", icon: "🏠" },
+        earplugs: { name: "隔音耳塞", desc: "老洋房隔音差，这个必备", icon: "🔇" },
         wrench: { name: "万能扳手", desc: "动手能力+加成，可用于BOSS战", icon: "🔧" },
         toolkit: { name: "维修工具箱", desc: "前租客留下的工具，动手+2", icon: "🧰" },
-        wall_secret: { name: "隔断秘密", desc: "你发现了墙壁的秘密", icon: "🧱" },
-        neighbor_info: { name: "邻居情报", desc: "小林分享的各种有用信息", icon: "📋" },
-        contract_knowledge: { name: "合同知识", desc: "了解了合同中的坑", icon: "📜" },
-        contract_photo: { name: "合同照片", desc: "拍下了不合理条款作为证据", icon: "📸" },
-        agent_evidence: { name: "中介黑料", desc: "记录了中介的不当行为", icon: "📝" },
+        wall_secret: { name: "群租房秘密", desc: "你发现了隔断墙的秘密", icon: "🧱" },
+        neighbor_info: { name: "魔都生存指南", desc: "小张分享的上海租房情报", icon: "📋" },
+        contract_knowledge: { name: "合同避坑指南", desc: "了解了上海租房合同里的坑", icon: "📜" },
+        contract_photo: { name: "合同照片", desc: "拍下了霸王条款作为维权证据", icon: "📸" },
+        agent_evidence: { name: "中介黑料", desc: "记录了链家小王的不当行为", icon: "📝" },
         fuzzy_contract: { name: "模糊合同", desc: "可在中介BOSS战中使用", icon: "📄" },
-        agent_recording: { name: "录音证据", desc: "中介威胁的录音", icon: "🎙️" },
-        negotiation_exp: { name: "谈判经验", desc: "战胜中介获得的经验", icon: "🏅" },
-        super_glue: { name: "万能胶", desc: "修补东西的好帮手", icon: "🧴" },
-        desk_lamp: { name: "二手台灯", desc: "虽然旧但还亮", icon: "💡" },
-        wall_paint: { name: "全新墙漆", desc: "可用于房东BOSS战", icon: "🎨" },
-        cleaning_kit: { name: "专业清洁套装", desc: "可用于房东BOSS战", icon: "✨" },
-        bug_spray: { name: "杀虫喷雾", desc: "对蟑螂特攻", icon: "🧴" }
+        agent_recording: { name: "录音证据", desc: "中介威胁不退押金的录音", icon: "🎙️" },
+        negotiation_exp: { name: "魔都砍价术", desc: "在上海租房市场磨练出的谈判技巧", icon: "🏅" },
+        super_glue: { name: "502万能胶", desc: "修补东西的好帮手", icon: "🧴" },
+        desk_lamp: { name: "塘桥二手台灯", desc: "浦东二手市场淘的，虽然旧但还亮", icon: "💡" },
+        wall_paint: { name: "立邦墙漆", desc: "和宛平南路老洋房一模一样的墙漆", icon: "🎨" },
+        cleaning_kit: { name: "专业清洁套装", desc: "阿姨推荐的上海老牌清洁用品", icon: "✨" },
+        bug_spray: { name: "雷达杀虫喷雾", desc: "对上海大蟑螂特攻", icon: "🧴" }
     },
 
     // Boss战中间轮次的事件ID列表
@@ -1013,21 +1013,24 @@ const GAME_DATA = {
 
     // 角色立绘配置
     characters: {
-        old_man: { name: "和善老头", image: "asset/pawn/和善老头.jpeg" },
-        landlord_lady: { name: "房东大妈", image: "asset/pawn/房东大妈.jpeg" },
-        agent: { name: "中介小哥", image: "asset/pawn/中介小哥.jpeg" },
-        roommate: { name: "热情室友", image: "asset/pawn/热情室友.jpeg" },
-        otaku: { name: "死宅室友", image: "asset/pawn/死宅室友.jpeg" },
-        strict_landlord: { name: "严厉房东", image: "asset/pawn/严厉房东.jpeg" },
-        staff: { name: "公寓员工", image: "asset/pawn/公寓员工.jpeg" },
+        old_man: { name: "弄堂老爷叔", image: "asset/pawn/和善老头.jpeg" },
+        landlord_lady: { name: "上海阿姨", image: "asset/pawn/房东大妈.jpeg" },
+        agent: { name: "链家小王", image: "asset/pawn/中介小哥.jpeg" },
+        roommate: { name: "张江小张", image: "asset/pawn/热情室友.jpeg" },
+        otaku: { name: "隔壁阿宅", image: "asset/pawn/死宅室友.jpeg" },
+        strict_landlord: { name: "挑剔房东", image: "asset/pawn/严厉房东.jpeg" },
+        staff: { name: "物业师傅", image: "asset/pawn/公寓员工.jpeg" },
+        coffee_guy: { name: "咖啡店白领", image: "asset/pawn/coffee_guy.jpeg" },
+        night_uncle: { name: "三楼老爷叔", image: "asset/pawn/night_uncle.jpeg" },
+        market_boss: { name: "二手市场老板", image: "asset/pawn/market_boss.jpeg" },
     },
 
     // 事件对应的角色立绘映射
     eventCharacters: {
-        // 和善老头 - 大爷
+        // 弄堂老爷叔
         1004: "old_man",
         1005: "old_man",
-        // 中介小哥 - 中介小王
+        // 链家小王
         1002: "agent",
         1006: "agent",
         1007: "agent",
@@ -1045,7 +1048,7 @@ const GAME_DATA = {
         2007: "agent",
         2008: "agent",
         2009: "agent",
-        // 房东大妈 - 阿婆
+        // 上海阿姨
         1011: "landlord_lady",
         1020: "landlord_lady",
         2010: "landlord_lady",
@@ -1053,16 +1056,29 @@ const GAME_DATA = {
         2012: "landlord_lady",
         2013: "landlord_lady",
         2014: "landlord_lady",
-        // 热情室友 - 小林
+        // 张江小张
         3001: "roommate",
         3002: "roommate",
         3004: "roommate",
         3005: "roommate",
         3010: "roommate",
         3026: "roommate",
-        // 公寓员工 - 维修工
+        // 物业师傅
         3009: "staff",
-        // Boss战 - 中介小王
+        // 咖啡店白领
+        1009: "coffee_guy",
+        1016: "coffee_guy",
+        1017: "coffee_guy",
+        // 三楼夜班老爷叔
+        3005: "night_uncle",
+        3006: "night_uncle",
+        3011: "night_uncle",
+        3012: "night_uncle",
+        // 二手市场老板
+        3016: "market_boss",
+        3022: "market_boss",
+        3023: "market_boss",
+        // Boss战 - 链家小王
         9001: "agent",
         9010: "agent",
         9020: "agent",
@@ -1074,7 +1090,7 @@ const GAME_DATA = {
         9060: "agent",
         9100: "agent",
         9101: "agent",
-        // Boss战 - 房东大妈（严厉版本）
+        // Boss战 - 挑剔房东阿姨
         9200: "strict_landlord",
         9210: "strict_landlord",
         9220: "strict_landlord",

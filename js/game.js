@@ -65,6 +65,135 @@
         tick();
     }
 
+    // ==================== 投票统计 API ====================
+    const VOTE_API = (() => {
+        // 自动检测 API 地址：同源时用相对路径，否则用 localhost:3000
+        const base = (location.port === '3000' || location.protocol === 'file:')
+            ? 'http://localhost:3000' : '';
+
+        async function fetchVotes(eventId) {
+            try {
+                const res = await fetch(`${base}/api/votes?eventId=${eventId}`);
+                if (!res.ok) return null;
+                return await res.json();
+            } catch (e) {
+                return null;
+            }
+        }
+
+        async function submitVote(eventId, optionIndex) {
+            try {
+                const res = await fetch(`${base}/api/vote`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ eventId, optionIndex }),
+                });
+                if (!res.ok) return null;
+                return await res.json();
+            } catch (e) {
+                return null;
+            }
+        }
+
+        return { fetchVotes, submitVote };
+    })();
+
+    // ==================== 浮动Tips系统 ====================
+    const attrNameMap = { charisma: '口才', handy: '动手', energy: '精力', money: '财力', mood: '心态' };
+    const attrColorMap = { charisma: 0x3498db, handy: 0xe67e22, energy: 0x2ecc71, money: 0xf1c40f, mood: 0xe74c3c };
+    let tipsQueue = [];
+    let tipsPlaying = false;
+
+    function showFloatingTip(text, color) {
+        const tip = createText(text, {
+            fontSize: 22,
+            fill: color,
+            fontWeight: 'bold',
+            stroke: 0x000000,
+            strokeThickness: 3,
+            align: 'center',
+        });
+        tip.anchor.set(0.5);
+        tip.x = W / 2;
+        tip.y = 370;
+        tip.alpha = 0;
+        layers.overlay.addChild(tip);
+
+        const startY = 370;
+        const endY = 300;
+        const start = performance.now();
+        const duration = 1200;
+
+        // 400ms后触发下一个Tip（不等当前完全消失）
+        setTimeout(playNextTip, 400);
+
+        function tick() {
+            const elapsed = performance.now() - start;
+            const t = clamp(elapsed / duration, 0, 1);
+
+            // 上升
+            tip.y = lerp(startY, endY, t);
+
+            // 淡入淡出：前15%淡入，后40%淡出
+            if (t < 0.15) {
+                tip.alpha = t / 0.15;
+            } else if (t > 0.6) {
+                tip.alpha = 1 - (t - 0.6) / 0.4;
+            } else {
+                tip.alpha = 1;
+            }
+
+            // 轻微缩放弹跳
+            if (t < 0.15) {
+                const bounce = 1 + 0.2 * Math.sin(t / 0.15 * Math.PI);
+                tip.scale.set(bounce);
+            } else {
+                tip.scale.set(1);
+            }
+
+            if (t < 1) {
+                requestAnimationFrame(tick);
+            } else {
+                if (tip.parent) tip.parent.removeChild(tip);
+            }
+        }
+        tick();
+    }
+
+    function playNextTip() {
+        if (tipsQueue.length === 0) {
+            tipsPlaying = false;
+            return;
+        }
+        const { text, color } = tipsQueue.shift();
+        showFloatingTip(text, color);
+    }
+
+    function queueAttrTips(effects) {
+        if (!effects) return;
+        Object.entries(effects).forEach(([k, v]) => {
+            if (v === 0) return;
+            const name = attrNameMap[k];
+            if (!name) return;
+            const sign = v > 0 ? '+' : '';
+            const color = v > 0 ? (attrColorMap[k] || 0x2ecc71) : 0xe74c3c;
+            const icon = v > 0 ? '▲' : '▼';
+            tipsQueue.push({ text: `${icon} ${name} ${sign}${v}`, color });
+        });
+        if (!tipsPlaying && tipsQueue.length > 0) {
+            tipsPlaying = true;
+            playNextTip();
+        }
+    }
+
+    function queueItemTip(text) {
+        tipsQueue.push({ text, color: 0xf39c12 });
+        if (!tipsPlaying && tipsQueue.length > 0) {
+            tipsPlaying = true;
+            playNextTip();
+        }
+    }
+
     function shake(obj, intensity, duration) {
         const origX = obj.x;
         const origY = obj.y;
@@ -221,6 +350,49 @@
             osc.stop(ctx.currentTime + 0.2);
         },
     };
+
+    // ==================== 全屏背景图系统 ====================
+    const thumbTextures = {};
+
+    function preloadThumbs(onComplete) {
+        const thumbs = {
+            start: 'asset/thumbs/start.jpeg',
+            finish_good: 'asset/thumbs/finish_good.jpeg',
+            finish_bad: 'asset/thumbs/finish_bad.jpeg',
+        };
+        const keys = Object.keys(thumbs);
+        let loaded = 0;
+        const total = keys.length;
+
+        keys.forEach(key => {
+            const img = new Image();
+            img.onload = function () {
+                thumbTextures[key] = PIXI.Texture.from(img);
+                loaded++;
+                if (loaded >= total && onComplete) onComplete();
+            };
+            img.onerror = function () {
+                loaded++;
+                if (loaded >= total && onComplete) onComplete();
+            };
+            img.src = thumbs[key];
+        });
+    }
+
+    function createFullscreenSprite(textureKey) {
+        const tex = thumbTextures[textureKey];
+        if (!tex) return null;
+        const sprite = new PIXI.Sprite(tex);
+        // Cover模式：撑满整个画布，居中裁切
+        const scaleX = W / tex.width;
+        const scaleY = H / tex.height;
+        const scale = Math.max(scaleX, scaleY);
+        sprite.scale.set(scale);
+        sprite.anchor.set(0.5);
+        sprite.x = W / 2;
+        sprite.y = H / 2;
+        return sprite;
+    }
 
     // ==================== 角色立绘系统 ====================
     const portraitTextures = {};
@@ -396,16 +568,20 @@
         });
     }
 
-    function applyEffects(effects) {
+    function applyEffects(effects, showTips) {
         if (!effects) return;
         Object.entries(effects).forEach(([k, v]) => {
             modAttr(k, v);
         });
+        if (showTips !== false) queueAttrTips(effects);
     }
 
     function checkGameOver() {
-        if (gameState.mood <= 0) return 'mood';
-        if (gameState.money <= -5) return 'money';
+        if (gameState.mood <= 1) return 'mood';
+        if (gameState.money <= 1) return 'money';
+        if (gameState.energy <= 1) return 'energy';
+        if (gameState.charisma <= 1) return 'charisma';
+        if (gameState.handy <= 1) return 'handy';
         return null;
     }
 
@@ -652,8 +828,10 @@
         const overlay = new PIXI.Container();
         overlay.name = 'diceOverlay';
 
-        // 暗色背景
+        // 暗色背景（拦截点击穿透）
         const mask = createRoundedRect(W, H, 0, 0x000000, 0.75);
+        mask.eventMode = 'static';
+        mask.cursor = 'default';
         overlay.addChild(mask);
 
         const attrNames = { charisma: '口才', handy: '动手', energy: '精力', money: '财力', mood: '心态' };
@@ -803,8 +981,10 @@
                 if (result === 'critical_success') {
                     modAttr(attrName, 1);
                     modAttr('mood', 1);
+                    queueAttrTips({ [attrName]: 1, mood: 1 });
                 } else if (result === 'critical_fail') {
                     modAttr('mood', -2);
+                    queueAttrTips({ mood: -2 });
                 }
 
                 // 继续按钮
@@ -859,10 +1039,21 @@
         gameState.history.push(eventId);
 
         // 应用事件效果
-        if (event.effects) applyEffects(event.effects);
-        if (event.gainItem) addItem(event.gainItem);
-        if (event.loseItem) removeItem(event.loseItem);
-        if (event.addBuff) addBuff(event.addBuff);
+        if (event.effects) applyEffects(event.effects, true);
+        if (event.gainItem) {
+            addItem(event.gainItem);
+            const itemInfo = GAME_DATA.items[event.gainItem];
+            if (itemInfo) queueItemTip(`获得 ${itemInfo.icon}${itemInfo.name}`);
+        }
+        if (event.loseItem) {
+            const itemInfo = GAME_DATA.items[event.loseItem];
+            removeItem(event.loseItem);
+            if (itemInfo) queueItemTip(`失去 ${itemInfo.icon}${itemInfo.name}`);
+        }
+        if (event.addBuff) {
+            addBuff(event.addBuff);
+            queueItemTip(`获得状态: ${event.addBuff.name}`);
+        }
 
         // Boss成功判定
         if (event.bossSuccess) {
@@ -979,6 +1170,7 @@
         // 选项按钮
         const optionsContainer = new PIXI.Container();
         const optionsStartY = textPanel.y + textHeight + 12;
+        const voteLabels = []; // 存放每个按钮的百分比文本引用
 
         event.options.forEach((opt, i) => {
             // 检查是否需要道具
@@ -998,6 +1190,11 @@
             const btnBg = createRoundedRect(btnW, btnH, 12, btnColor, 0.85);
             btn.addChild(btnBg);
 
+            // 投票百分比进度条（底层）
+            const voteBar = new PIXI.Graphics();
+            voteBar.alpha = 0;
+            btn.addChild(voteBar);
+
             // 高亮边框
             const border = new PIXI.Graphics();
             border.lineStyle(2, isCheck ? 0xa29bfe : 0x636e72, 0.6);
@@ -1007,11 +1204,23 @@
             const btnLabel = createText(opt.text, {
                 fontSize: 15,
                 fill: 0xffffff,
-                wordWrapWidth: btnW - 30,
+                wordWrapWidth: btnW - 120,
             });
             btnLabel.x = 16;
             btnLabel.y = btnH / 2 - btnLabel.height / 2;
             btn.addChild(btnLabel);
+
+            // 投票百分比文本（紧跟选项文本后面）
+            const voteText = createText('', {
+                fontSize: 11,
+                fill: 0xaaaaaa,
+            });
+            voteText.x = btnLabel.x + btnLabel.width + 8;
+            voteText.y = btnH / 2 - voteText.height / 2 + 1;
+            voteText.alpha = 0;
+            btn.addChild(voteText);
+
+            voteLabels.push({ index: i, voteText, voteBar, btnW, btnH, btnColor: isCheck ? 0x6c5ce7 : 0x2d3436 });
 
             // 检定标记
             if (isCheck) {
@@ -1048,6 +1257,7 @@
             btn.on('pointertap', () => {
                 if (isTransitioning) return;
                 SFX.click();
+                VOTE_API.submitVote(eventId, i);
                 handleOptionClick(opt);
             });
 
@@ -1055,6 +1265,28 @@
         });
 
         newContent.addChild(optionsContainer);
+
+        // 异步拉取投票数据并更新百分比显示
+        VOTE_API.fetchVotes(eventId).then(data => {
+            if (!data || !optionsContainer.parent) return;
+            const { votes: eventVotes, total } = data;
+            if (!total) return;
+
+            voteLabels.forEach(({ index, voteText, voteBar, btnW, btnH, btnColor }) => {
+                const count = (eventVotes && eventVotes[String(index)]) || 0;
+                const pct = Math.round((count / total) * 100);
+                voteText.text = `${pct}% 选择`;
+                voteText.alpha = 1;
+
+                // 绘制半透明进度条
+                const fillW = Math.max(2, (pct / 100) * btnW);
+                voteBar.clear();
+                voteBar.beginFill(0xffffff, 0.08);
+                voteBar.drawRoundedRect(0, 0, fillW, btnH, 12);
+                voteBar.endFill();
+                voteBar.alpha = 1;
+            });
+        });
 
         // 背包按钮
         const bagBtn = new PIXI.Container();
@@ -1088,9 +1320,17 @@
     }
 
     function handleOptionClick(opt) {
-        if (opt.effects) applyEffects(opt.effects);
-        if (opt.gainItem) addItem(opt.gainItem);
-        if (opt.loseItem) removeItem(opt.loseItem);
+        if (opt.effects) applyEffects(opt.effects, true);
+        if (opt.gainItem) {
+            addItem(opt.gainItem);
+            const itemInfo = GAME_DATA.items[opt.gainItem];
+            if (itemInfo) queueItemTip(`获得 ${itemInfo.icon}${itemInfo.name}`);
+        }
+        if (opt.loseItem) {
+            const itemInfo = GAME_DATA.items[opt.loseItem];
+            removeItem(opt.loseItem);
+            if (itemInfo) queueItemTip(`失去 ${itemInfo.icon}${itemInfo.name}`);
+        }
 
         // Boss战轮次推进
         if (opt.nextBossRound) {
@@ -1227,10 +1467,22 @@
 
         const container = new PIXI.Container();
 
-        const bg = createRoundedRect(W, H, 0, 0x0c0c1d, 1);
-        container.addChild(bg);
+        // 失败背景图
+        const bgSprite = createFullscreenSprite('finish_bad');
+        if (bgSprite) {
+            container.addChild(bgSprite);
+            const dimOverlay = new PIXI.Graphics();
+            dimOverlay.beginFill(0x000000, 0.6);
+            dimOverlay.drawRect(0, 0, W, H);
+            dimOverlay.endFill();
+            container.addChild(dimOverlay);
+        } else {
+            const bg = createRoundedRect(W, H, 0, 0x0c0c1d, 1);
+            container.addChild(bg);
+        }
 
-        const icon = createText(reason === 'mood' ? '😭' : '💸', { fontSize: 80 });
+        const gameOverIcons = { mood: '😭', money: '💸', energy: '😫', charisma: '🤐', handy: '🤕' };
+        const icon = createText(gameOverIcons[reason] || '💀', { fontSize: 80 });
         icon.anchor.set(0.5);
         icon.x = W / 2;
         icon.y = 250;
@@ -1242,9 +1494,14 @@
         title.y = 340;
         container.addChild(title);
 
-        const msg = reason === 'mood'
-            ? '你的心态彻底崩了...\n租房的压力终于把你压垮了。\n也许下次会做出更好的选择。'
-            : '你的钱花光了...\n在这个昂贵的城市里，没钱寸步难行。\n下次要精打细算啊。';
+        const gameOverMsgs = {
+            mood: '你的心态彻底崩了...\n租房的压力终于把你压垮了。\n也许下次会做出更好的选择。',
+            money: '你的钱花光了...\n在这个昂贵的城市里，没钱寸步难行。\n下次要精打细算啊。',
+            energy: '你精力耗尽，累倒在出租屋里...\n魔都的节奏太快了。\n下次记得劳逸结合。',
+            charisma: '你变得不敢开口说话了...\n一次次碰壁让你丧失了交流的勇气。\n下次试试不同的沟通方式吧。',
+            handy: '你连灯泡都拧不动了...\n生活技能归零，在魔都寸步难行。\n下次多动手试试吧。'
+        };
+        const msg = gameOverMsgs[reason] || '你在魔都的冒险结束了...';
 
         const msgText = createText(msg, {
             fontSize: 18, fill: 0xcccccc, align: 'center',
@@ -1291,12 +1548,24 @@
 
         const container = new PIXI.Container();
 
-        const bg = createRoundedRect(W, H, 0, 0x1a1a2e, 1);
-        container.addChild(bg);
-
         const score = calcScore();
         const rank = score >= 80 ? 'S' : score >= 60 ? 'A' : score >= 40 ? 'B' : score >= 20 ? 'C' : 'D';
         const rankColors = { S: 0xf1c40f, A: 0x2ecc71, B: 0x3498db, C: 0xe67e22, D: 0xe74c3c };
+
+        // 根据评级选择背景图：S/A/B用胜利图，C/D用失败图
+        const isGoodEnding = (rank === 'S' || rank === 'A' || rank === 'B');
+        const bgSprite = createFullscreenSprite(isGoodEnding ? 'finish_good' : 'finish_bad');
+        if (bgSprite) {
+            container.addChild(bgSprite);
+            const dimOverlay = new PIXI.Graphics();
+            dimOverlay.beginFill(0x000000, isGoodEnding ? 0.45 : 0.55);
+            dimOverlay.drawRect(0, 0, W, H);
+            dimOverlay.endFill();
+            container.addChild(dimOverlay);
+        } else {
+            const bg = createRoundedRect(W, H, 0, 0x1a1a2e, 1);
+            container.addChild(bg);
+        }
 
         const titleEmoji = createText('🏆', { fontSize: 72 });
         titleEmoji.anchor.set(0.5);
@@ -1304,7 +1573,7 @@
         titleEmoji.y = 150;
         container.addChild(titleEmoji);
 
-        const title = createText('租房大冒险\n— 冒险结束 —', {
+        const title = createText('魔都租房大冒险\n— 冒险结束 —', {
             fontSize: 30, fill: 0xffffff, fontWeight: 'bold', align: 'center', lineHeight: 40
         });
         title.anchor.set(0.5);
@@ -1407,22 +1676,43 @@
         layers.ui.removeChildren();
         layers.overlay.removeChildren();
 
-        const bg = new PIXI.Graphics();
-        bg.beginFill(0x1a1a2e);
-        bg.drawRect(0, 0, W, H);
-        bg.endFill();
-        layers.bg.addChild(bg);
+        // 封面背景图
+        const bgSprite = createFullscreenSprite('start');
+        if (bgSprite) {
+            layers.bg.addChild(bgSprite);
+            // 加轻微暗色遮罩（背景图已有标题，仅底部按钮区域略暗）
+            const dimOverlay = new PIXI.Graphics();
+            dimOverlay.beginFill(0x000000, 0.15);
+            dimOverlay.drawRect(0, 0, W, H);
+            dimOverlay.endFill();
+            layers.bg.addChild(dimOverlay);
+        } else {
+            // 无图片时的fallback背景
+            const bg = new PIXI.Graphics();
+            bg.beginFill(0x0d1b2a);
+            bg.drawRect(0, 0, W, H);
+            bg.endFill();
+            bg.beginFill(0x1b263b, 0.95);
+            bg.drawRect(0, H * 0.4, W, H * 0.6);
+            bg.endFill();
+            bg.beginFill(0xe63946, 0.15);
+            bg.drawRect(0, H - 120, W, 120);
+            bg.endFill();
+            layers.bg.addChild(bg);
+        }
 
-        // 动态背景粒子
+        // 魔都霓虹感粒子（暖黄/金/红）
+        const colors = [0xffd166, 0xe63946, 0xffaa00, 0xffffff];
         const particles = new PIXI.Container();
-        for (let i = 0; i < 30; i++) {
+        for (let i = 0; i < 40; i++) {
             const p = new PIXI.Graphics();
-            p.beginFill(0xffffff, 0.1 + Math.random() * 0.2);
-            p.drawCircle(0, 0, 2 + Math.random() * 4);
+            const c = colors[Math.floor(Math.random() * colors.length)];
+            p.beginFill(c, 0.15 + Math.random() * 0.25);
+            p.drawCircle(0, 0, 1.5 + Math.random() * 3);
             p.endFill();
             p.x = Math.random() * W;
             p.y = Math.random() * H;
-            p._speed = 0.3 + Math.random() * 0.7;
+            p._speed = 0.4 + Math.random() * 0.8;
             particles.addChild(p);
         }
         layers.bg.addChild(particles);
@@ -1437,50 +1727,15 @@
 
         const container = new PIXI.Container();
 
-        // 标题
-        const titleIcon = createText('🏠', { fontSize: 80 });
-        titleIcon.anchor.set(0.5);
-        titleIcon.x = W / 2;
-        titleIcon.y = 200;
-        container.addChild(titleIcon);
-
-        const title = createText('租房大冒险', {
-            fontSize: 42, fill: 0xffffff, fontWeight: 'bold'
-        });
-        title.anchor.set(0.5);
-        title.x = W / 2;
-        title.y = 300;
-        container.addChild(title);
-
-        const subtitle = createText('Rogue Rental', {
-            fontSize: 20, fill: 0x888888, fontStyle: 'italic'
-        });
-        subtitle.anchor.set(0.5);
-        subtitle.x = W / 2;
-        subtitle.y = 350;
-        container.addChild(subtitle);
-
-        const desc = createText(
-            '在这座城市里，找到一个合适的住所\n是一场真正的冒险...\n\n用你的智慧和勇气\n战胜黑心中介和刁钻房东！',
-            {
-                fontSize: 16, fill: 0xaaaaaa, align: 'center',
-                wordWrapWidth: 340, lineHeight: 28
-            }
-        );
-        desc.anchor.set(0.5);
-        desc.x = W / 2;
-        desc.y = 450;
-        container.addChild(desc);
-
-        // 开始按钮
+        // 开始按钮（标题文字已在背景图上）
         const startBtn = new PIXI.Container();
         startBtn.x = W / 2 - 120;
         startBtn.y = 590;
 
-        const startBg = createRoundedRect(240, 64, 32, 0xe74c3c, 0.9);
+        const startBg = createRoundedRect(240, 64, 32, 0xe63946, 0.95);
         startBtn.addChild(startBg);
 
-        const startText = createText('🎲 开始冒险！', { fontSize: 24, fill: 0xffffff, fontWeight: 'bold' });
+        const startText = createText('🎲 闯荡魔都！', { fontSize: 24, fill: 0xffffff, fontWeight: 'bold' });
         startText.x = 120 - startText.width / 2;
         startText.y = 32 - startText.height / 2;
         startBtn.addChild(startText);
@@ -1564,7 +1819,7 @@
         }
 
         // 版本信息
-        const ver = createText('v0.1.0 原型版', { fontSize: 12, fill: 0x555555 });
+        const ver = createText('v0.1.0 原型版', { fontSize: 12, fill: 0x8a9aad });
         ver.anchor.set(0.5);
         ver.x = W / 2;
         ver.y = H - 30;
@@ -1606,9 +1861,11 @@
     }
 
     // ==================== 启动 ====================
-    // 预加载角色立绘后再显示标题画面
-    preloadPortraits(() => {
-        showTitleScreen();
+    // 预加载背景图和角色立绘后再显示标题画面
+    preloadThumbs(() => {
+        preloadPortraits(() => {
+            showTitleScreen();
+        });
     });
 
 })();
