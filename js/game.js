@@ -1513,7 +1513,8 @@
 
         container.addChild(startBtn);
 
-        // Debug: 快速跳转Boss战
+        // Debug: 快速跳转Boss战（仅localhost显示）
+        if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
         const debugBtnW = 180;
         const debugBtnH = 40;
 
@@ -1560,6 +1561,7 @@
             });
         });
         container.addChild(debugLandlordBtn);
+        }
 
         // 版本信息
         const ver = createText('v0.1.0 原型版', { fontSize: 12, fill: 0x555555 });
