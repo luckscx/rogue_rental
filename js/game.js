@@ -98,6 +98,39 @@
         return { fetchVotes, submitVote };
     })();
 
+    // ==================== 弹幕吐槽 API ====================
+    const DANMAKU_API = (() => {
+        const base = (location.port === '3000' || location.protocol === 'file:')
+            ? 'http://localhost:3000' : '';
+
+        async function fetchDanmaku(eventId) {
+            try {
+                const res = await fetch(`${base}/api/danmaku?eventId=${eventId}`);
+                if (!res.ok) return [];
+                const data = await res.json();
+                return data.danmaku || [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        async function submitDanmaku(eventId, text) {
+            try {
+                const res = await fetch(`${base}/api/danmaku`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ eventId, text }),
+                });
+                if (!res.ok) return false;
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        return { fetchDanmaku, submitDanmaku };
+    })();
+
     // ==================== 浮动Tips系统 ====================
     const attrNameMap = { charisma: '口才', handy: '动手', energy: '精力', money: '财力', mood: '心态' };
     const attrColorMap = { charisma: 0x3498db, handy: 0xe67e22, energy: 0x2ecc71, money: 0xf1c40f, mood: 0xe74c3c };
@@ -527,6 +560,8 @@
         bossChecksCompleted: 0,
         history: [],
         score: 0,
+        branchQueue: [],
+        branchQueueIndex: 0,
     };
 
     function getAttr(name) {
@@ -538,7 +573,7 @@
     }
 
     function modAttr(name, delta) {
-        gameState[name] = clamp((gameState[name] || 0) + delta, 0, 99);
+        gameState[name] = clamp((gameState[name] || 0) + delta, 0, 10);
     }
 
     function hasItem(id) {
@@ -1022,6 +1057,164 @@
     let currentEventId = null;
     let isTransitioning = false;
 
+    // ==================== 弹幕吐槽系统 ====================
+    let danmakuTicker = null; // 弹幕动画ticker引用
+
+    function playDanmaku(eventId) {
+        // 清除之前的弹幕ticker
+        if (danmakuTicker) {
+            app.ticker.remove(danmakuTicker);
+            danmakuTicker = null;
+        }
+        // 移除旧弹幕容器
+        const old = layers.overlay.getChildByName('danmakuLayer');
+        if (old) layers.overlay.removeChild(old);
+
+        DANMAKU_API.fetchDanmaku(eventId).then(items => {
+            if (!items || items.length === 0) return;
+
+            const dmLayer = new PIXI.Container();
+            dmLayer.name = 'danmakuLayer';
+            dmLayer.eventMode = 'none'; // 不拦截点击
+            layers.overlay.addChild(dmLayer);
+
+            const bullets = [];
+            const colors = [0xffffff, 0xffd166, 0x06d6a0, 0xef476f, 0x118ab2];
+
+            items.forEach((item, i) => {
+                const color = colors[i % colors.length];
+                const txt = createText(item.text, {
+                    fontSize: 16,
+                    fill: color,
+                    fontWeight: 'bold',
+                    stroke: 0x000000,
+                    strokeThickness: 3,
+                    wordWrap: false,
+                });
+                // 初始在右侧屏幕外，Y轴错开
+                txt.x = W + 20 + i * 200;
+                txt.y = 110 + i * 36;
+                txt.alpha = 0.85;
+                dmLayer.addChild(txt);
+                bullets.push({ txt, speed: 1.2 + Math.random() * 0.8 });
+            });
+
+            danmakuTicker = () => {
+                if (!dmLayer.parent) {
+                    app.ticker.remove(danmakuTicker);
+                    danmakuTicker = null;
+                    return;
+                }
+                bullets.forEach(b => {
+                    b.txt.x -= b.speed;
+                    // 飞出左边后回到右边循环
+                    if (b.txt.x + b.txt.width < -20) {
+                        b.txt.x = W + 20 + Math.random() * 100;
+                    }
+                });
+            };
+            app.ticker.add(danmakuTicker);
+        });
+    }
+
+    function showDanmakuInput(eventId) {
+        // 创建HTML输入框（PIXI中无法直接输入文字）
+        const existing = document.getElementById('danmaku-input-overlay');
+        if (existing) existing.remove();
+
+        const overlay = document.createElement('div');
+        overlay.id = 'danmaku-input-overlay';
+        overlay.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); display: flex; align-items: center;
+            justify-content: center; z-index: 9999;
+        `;
+
+        const dialog = document.createElement('div');
+        dialog.style.cssText = `
+            background: #1a1a2e; border: 2px solid #ffd166; border-radius: 16px;
+            padding: 24px; width: 340px; max-width: 90vw; text-align: center;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        `;
+
+        const title = document.createElement('div');
+        title.textContent = '💬 发一条弹幕吐槽';
+        title.style.cssText = 'color: #ffd166; font-size: 18px; font-weight: bold; margin-bottom: 16px;';
+        dialog.appendChild(title);
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.maxLength = 30;
+        input.placeholder = '最多30字，说点什么吧...';
+        input.style.cssText = `
+            width: 100%; box-sizing: border-box; padding: 12px 16px;
+            border: 1px solid #444; border-radius: 10px; background: #0d1b2a;
+            color: #fff; font-size: 16px; outline: none; margin-bottom: 8px;
+        `;
+        dialog.appendChild(input);
+
+        const counter = document.createElement('div');
+        counter.textContent = '0/30';
+        counter.style.cssText = 'color: #888; font-size: 12px; text-align: right; margin-bottom: 16px;';
+        dialog.appendChild(counter);
+
+        input.addEventListener('input', () => {
+            counter.textContent = `${input.value.length}/30`;
+            counter.style.color = input.value.length >= 28 ? '#e74c3c' : '#888';
+        });
+
+        const btnRow = document.createElement('div');
+        btnRow.style.cssText = 'display: flex; gap: 12px; justify-content: center;';
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = '取消';
+        cancelBtn.style.cssText = `
+            padding: 10px 28px; border: 1px solid #555; border-radius: 10px;
+            background: transparent; color: #aaa; font-size: 15px; cursor: pointer;
+        `;
+        cancelBtn.onclick = () => overlay.remove();
+        btnRow.appendChild(cancelBtn);
+
+        const submitBtn = document.createElement('button');
+        submitBtn.textContent = '发射 🚀';
+        submitBtn.style.cssText = `
+            padding: 10px 28px; border: none; border-radius: 10px;
+            background: linear-gradient(135deg, #ffd166, #ef476f); color: #fff;
+            font-size: 15px; font-weight: bold; cursor: pointer;
+        `;
+        submitBtn.onclick = async () => {
+            const text = input.value.trim();
+            if (!text) return;
+            submitBtn.disabled = true;
+            submitBtn.textContent = '发送中...';
+            const ok = await DANMAKU_API.submitDanmaku(eventId, text);
+            overlay.remove();
+            if (ok) {
+                // 发送成功后刷新弹幕
+                playDanmaku(eventId);
+            }
+        };
+        btnRow.appendChild(submitBtn);
+        dialog.appendChild(btnRow);
+
+        // 按回车提交
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') submitBtn.click();
+        });
+
+        overlay.appendChild(dialog);
+        // 点击遮罩关闭（延迟绑定，防止手机端触摸事件穿透立即关闭）
+        document.body.appendChild(overlay);
+        setTimeout(() => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.remove();
+            });
+            input.focus();
+        }, 300);
+    }
+
+    // ==================== 事件系统 ====================
+
     function showEvent(eventId) {
         if (isTransitioning) return;
 
@@ -1172,12 +1365,34 @@
         const optionsStartY = textPanel.y + textHeight + 12;
         const voteLabels = []; // 存放每个按钮的百分比文本引用
 
+        // 判断某个选项是否已被完整体验过（所有可能的目标事件都已访问）
+        function isOptionExhausted(opt) {
+            const targets = [];
+            if (opt.next) targets.push(opt.next);
+            if (opt.success) targets.push(opt.success);
+            if (opt.fail) targets.push(opt.fail);
+            if (targets.length === 0) return false;
+            return targets.every(t => gameState.history.includes(t));
+        }
+
+        // 过滤出可用选项（needItem检查）
+        const availableOptions = event.options.filter(opt => !opt.needItem || hasItem(opt.needItem));
+        // 计算哪些选项已体验过
+        const exhaustedFlags = availableOptions.map(opt => isOptionExhausted(opt));
+        // 如果全部都体验过了，就全部解锁（避免死锁）
+        const allExhausted = exhaustedFlags.every(f => f);
+
+        let renderedIndex = 0;
         event.options.forEach((opt, i) => {
             // 检查是否需要道具
             if (opt.needItem && !hasItem(opt.needItem)) return;
 
+            const avIdx = availableOptions.indexOf(opt);
+            const isExhausted = !allExhausted && exhaustedFlags[avIdx];
+
             const btnGap = 60;
-            const btnY = optionsStartY + i * btnGap;
+            const btnY = optionsStartY + renderedIndex * btnGap;
+            renderedIndex++;
             const btn = new PIXI.Container();
             btn.y = btnY;
             btn.x = 24;
@@ -1248,18 +1463,31 @@
                 }
             }
 
-            btn.eventMode = 'static';
-            btn.cursor = 'pointer';
+            // 已体验过的选项：置灰 + 标记
+            if (isExhausted) {
+                btn.alpha = 0.4;
+                btn.eventMode = 'none';
+                const doneLabel = createText('[已体验]', {
+                    fontSize: 11,
+                    fill: 0x888888,
+                });
+                doneLabel.x = btnW - doneLabel.width - 12;
+                doneLabel.y = btnH / 2 - doneLabel.height / 2;
+                btn.addChild(doneLabel);
+            } else {
+                btn.eventMode = 'static';
+                btn.cursor = 'pointer';
 
-            btn.on('pointerover', () => { btnBg.tint = 0xcccccc; });
-            btn.on('pointerout', () => { btnBg.tint = 0xffffff; });
+                btn.on('pointerover', () => { btnBg.tint = 0xcccccc; });
+                btn.on('pointerout', () => { btnBg.tint = 0xffffff; });
 
-            btn.on('pointertap', () => {
-                if (isTransitioning) return;
-                SFX.click();
-                VOTE_API.submitVote(eventId, i);
-                handleOptionClick(opt);
-            });
+                btn.on('pointertap', () => {
+                    if (isTransitioning) return;
+                    SFX.click();
+                    VOTE_API.submitVote(eventId, i);
+                    handleOptionClick(opt);
+                });
+            }
 
             optionsContainer.addChild(btn);
         });
@@ -1311,12 +1539,57 @@
         bagBtn.on('pointertap', toggleItemPanel);
         newContent.addChild(bagBtn);
 
+        // 弹幕吐槽按钮
+        const dmBtn = new PIXI.Container();
+        dmBtn.x = W - 130;
+        dmBtn.y = 62;
+
+        const dmBg = createRoundedRect(56, 40, 20, 0x000000, 0.5);
+        dmBtn.addChild(dmBg);
+
+        const dmIcon = createText('💬', { fontSize: 22 });
+        dmIcon.x = 14;
+        dmIcon.y = 6;
+        dmBtn.addChild(dmIcon);
+
+        dmBtn.eventMode = 'static';
+        dmBtn.cursor = 'pointer';
+        dmBtn.on('pointertap', () => {
+            showDanmakuInput(eventId);
+        });
+        newContent.addChild(dmBtn);
+
+        // 异步加载并播放弹幕
+        playDanmaku(eventId);
+
         // 切换动画
         layers.scene.removeChildren();
         layers.scene.addChild(newContent);
         animateAlpha(newContent, 0, 1, 350, () => {
             isTransitioning = false;
         });
+    }
+
+    // 分支剧情队列：三个分支按随机顺序依次执行
+    const BRANCH_IDS = [3040, 3043, 3047];
+    function shuffleBranchQueue() {
+        const arr = BRANCH_IDS.slice();
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        gameState.branchQueue = arr;
+        gameState.branchQueueIndex = 0;
+    }
+    function getNextInBranchSequence(preferredNext) {
+        if (gameState.branchQueue && gameState.branchQueueIndex < gameState.branchQueue.length) {
+            return gameState.branchQueue[gameState.branchQueueIndex++];
+        }
+        if (gameState.branchQueue) {
+            gameState.branchQueue = [];
+            gameState.branchQueueIndex = 0;
+        }
+        return preferredNext;
     }
 
     function handleOptionClick(opt) {
@@ -1332,6 +1605,13 @@
             if (itemInfo) queueItemTip(`失去 ${itemInfo.icon}${itemInfo.name}`);
         }
 
+        // 分支剧情序列：从 3035 点击「开始」后，按随机顺序依次执行三个分支
+        if (opt.next === 'branch_sequence_start') {
+            shuffleBranchQueue();
+            showEvent(gameState.branchQueue[0]);
+            return;
+        }
+
         // Boss战轮次推进
         if (opt.nextBossRound) {
             advanceBossRound();
@@ -1344,23 +1624,37 @@
 
         if (opt.check) {
             showDiceRoll(opt.check, opt.difficulty || 50, (success) => {
-                if (success) {
-                    if (opt.success) {
-                        showEvent(opt.success);
-                    } else if (opt.next) {
-                        showEvent(opt.next);
+                let nextId = success ? (opt.success || opt.next) : (opt.fail || opt.next);
+                if (nextId === 3015 || nextId === 1003) nextId = getNextInBranchSequence(nextId);
+                if (nextId) {
+                    // 分支队列未跑完时，不触发 Boss，先跑完三个分支
+                    if (BRANCH_IDS.includes(nextId)) {
+                        showEvent(nextId);
+                        return;
                     }
-                } else {
-                    if (opt.fail) {
-                        showEvent(opt.fail);
-                    } else if (opt.next) {
-                        showEvent(opt.next);
+                    const nextEvent = GAME_DATA.events[nextId];
+                    if (nextEvent && nextEvent.chapter === 'living' && !gameState.bossAgentDefeated &&
+                        gameState.eventCount >= GAME_DATA.bossAgentTriggerCount) {
+                        startBoss('agent');
+                        return;
                     }
+                    if (nextEvent && nextEvent.chapter === 'living' && gameState.bossAgentDefeated &&
+                        !gameState.bossLandlordDefeated && gameState.eventCount >= GAME_DATA.bossLandlordTriggerCount) {
+                        startBoss('landlord');
+                        return;
+                    }
+                    showEvent(nextId);
                 }
             });
         } else if (opt.next) {
             // 检查是否该触发Boss
-            const nextEvent = GAME_DATA.events[opt.next];
+            let nextId = (opt.next === 3015 || opt.next === 1003) ? getNextInBranchSequence(opt.next) : opt.next;
+            // 分支队列未跑完时，不触发 Boss，先跑完三个分支
+            if (BRANCH_IDS.includes(nextId)) {
+                showEvent(nextId);
+                return;
+            }
+            const nextEvent = GAME_DATA.events[nextId];
             if (nextEvent && nextEvent.chapter === 'living' && !gameState.bossAgentDefeated &&
                 gameState.eventCount >= GAME_DATA.bossAgentTriggerCount) {
                 startBoss('agent');
@@ -1371,7 +1665,7 @@
                 startBoss('landlord');
                 return;
             }
-            showEvent(opt.next);
+            showEvent(nextId);
         } else if (opt.next === 'ending') {
             showEnding();
         }
@@ -1464,6 +1758,9 @@
     function showGameOver(reason) {
         layers.scene.removeChildren();
         layers.overlay.removeChildren();
+        if (danmakuTicker) { app.ticker.remove(danmakuTicker); danmakuTicker = null; }
+        const dmOverlay = document.getElementById('danmaku-input-overlay');
+        if (dmOverlay) dmOverlay.remove();
 
         const container = new PIXI.Container();
 
@@ -1545,6 +1842,9 @@
     function showEnding() {
         layers.scene.removeChildren();
         layers.overlay.removeChildren();
+        if (danmakuTicker) { app.ticker.remove(danmakuTicker); danmakuTicker = null; }
+        const dmOverlay = document.getElementById('danmaku-input-overlay');
+        if (dmOverlay) dmOverlay.remove();
 
         const container = new PIXI.Container();
 
@@ -1768,18 +2068,63 @@
 
         container.addChild(startBtn);
 
-        // Debug: 快速跳转Boss战（仅localhost显示）
+        // Debug: 快速跳转（仅localhost显示）
         if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
-        const debugBtnW = 180;
-        const debugBtnH = 40;
+        const debugBtnW = 140;
+        const debugBtnH = 32;
+        const debugRadius = 12;
+        const debugFont = 12;
+
+        // 分支剧情按钮
+        const debugBranchBtn = new PIXI.Container();
+        debugBranchBtn.x = W / 2 - debugBtnW / 2;
+        debugBranchBtn.y = 700;
+        const debugBranchBg = createRoundedRect(debugBtnW, debugBtnH, debugRadius, 0x2ecc71, 0.6);
+        debugBranchBtn.addChild(debugBranchBg);
+        const debugBranchText = createText('🐛 分支剧情', { fontSize: debugFont, fill: 0xffffff });
+        debugBranchText.x = debugBtnW / 2 - debugBranchText.width / 2;
+        debugBranchText.y = debugBtnH / 2 - debugBranchText.height / 2;
+        debugBranchBtn.addChild(debugBranchText);
+        debugBranchBtn.eventMode = 'static';
+        debugBranchBtn.cursor = 'pointer';
+        debugBranchBtn.on('pointertap', () => {
+            SFX.click();
+            animateAlpha(container, 1, 0, 300, () => {
+                layers.scene.removeChildren();
+                layers.bg.removeChildren();
+                gameState.charisma = 5;
+                gameState.handy = 3;
+                gameState.energy = 8;
+                gameState.money = 10;
+                gameState.mood = 8;
+                gameState.items = [];
+                gameState.buffs = [];
+                gameState.eventCount = 0;
+                gameState.bossAgentDefeated = false;
+                gameState.bossLandlordDefeated = false;
+                gameState.currentBoss = null;
+                gameState.bossRound = 0;
+                gameState.bossSuccessCount = 0;
+                gameState.bossRage = 0;
+                gameState.bossChecksCompleted = 0;
+                gameState.history = [];
+                gameState.score = 0;
+                gameState.branchQueue = [];
+                gameState.branchQueueIndex = 0;
+                isTransitioning = false;
+                currentEventId = null;
+                showEvent(3035);
+            });
+        });
+        container.addChild(debugBranchBtn);
 
         // 中介Boss按钮
         const debugAgentBtn = new PIXI.Container();
         debugAgentBtn.x = W / 2 - debugBtnW - 5;
-        debugAgentBtn.y = 670;
-        const debugAgentBg = createRoundedRect(debugBtnW, debugBtnH, 16, 0x6c5ce7, 0.6);
+        debugAgentBtn.y = 738;
+        const debugAgentBg = createRoundedRect(debugBtnW, debugBtnH, debugRadius, 0x6c5ce7, 0.6);
         debugAgentBtn.addChild(debugAgentBg);
-        const debugAgentText = createText('🐛 中介Boss', { fontSize: 14, fill: 0xffffff });
+        const debugAgentText = createText('🐛 中介Boss', { fontSize: debugFont, fill: 0xffffff });
         debugAgentText.x = debugBtnW / 2 - debugAgentText.width / 2;
         debugAgentText.y = debugBtnH / 2 - debugAgentText.height / 2;
         debugAgentBtn.addChild(debugAgentText);
@@ -1798,10 +2143,10 @@
         // 房东Boss按钮
         const debugLandlordBtn = new PIXI.Container();
         debugLandlordBtn.x = W / 2 + 5;
-        debugLandlordBtn.y = 670;
-        const debugLandlordBg = createRoundedRect(debugBtnW, debugBtnH, 16, 0xe74c3c, 0.6);
+        debugLandlordBtn.y = 738;
+        const debugLandlordBg = createRoundedRect(debugBtnW, debugBtnH, debugRadius, 0xe74c3c, 0.6);
         debugLandlordBtn.addChild(debugLandlordBg);
-        const debugLandlordText = createText('🐛 房东Boss', { fontSize: 14, fill: 0xffffff });
+        const debugLandlordText = createText('🐛 房东Boss', { fontSize: debugFont, fill: 0xffffff });
         debugLandlordText.x = debugBtnW / 2 - debugLandlordText.width / 2;
         debugLandlordText.y = debugBtnH / 2 - debugLandlordText.height / 2;
         debugLandlordBtn.addChild(debugLandlordText);
@@ -1849,6 +2194,8 @@
         gameState.bossChecksCompleted = 0;
         gameState.history = [];
         gameState.score = 0;
+        gameState.branchQueue = [];
+        gameState.branchQueueIndex = 0;
 
         layers.bg.removeChildren();
         layers.scene.removeChildren();
@@ -1856,6 +2203,11 @@
         layers.overlay.removeChildren();
         isTransitioning = false;
         currentEventId = null;
+
+        // 清理弹幕
+        if (danmakuTicker) { app.ticker.remove(danmakuTicker); danmakuTicker = null; }
+        const dmOverlay = document.getElementById('danmaku-input-overlay');
+        if (dmOverlay) dmOverlay.remove();
 
         showTitleScreen();
     }

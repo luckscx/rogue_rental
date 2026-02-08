@@ -12,6 +12,7 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3000;
 const DATA_FILE = path.join(__dirname, 'votes.json');
+const DANMAKU_FILE = path.join(__dirname, 'danmaku.json');
 
 // MIME 类型映射
 const MIME_TYPES = {
@@ -39,6 +40,18 @@ function loadVotes() {
     return {};
 }
 
+// 加载弹幕数据
+function loadDanmaku() {
+    try {
+        if (fs.existsSync(DANMAKU_FILE)) {
+            return JSON.parse(fs.readFileSync(DANMAKU_FILE, 'utf-8'));
+        }
+    } catch (e) {
+        console.error('Failed to load danmaku:', e.message);
+    }
+    return {};
+}
+
 // 保存投票数据（防抖写入）
 let saveTimer = null;
 let votes = loadVotes();
@@ -50,6 +63,21 @@ function saveVotes() {
             fs.writeFileSync(DATA_FILE, JSON.stringify(votes, null, 2), 'utf-8');
         } catch (e) {
             console.error('Failed to save votes:', e.message);
+        }
+    }, 1000);
+}
+
+// 保存弹幕数据（防抖写入）
+let danmakuSaveTimer = null;
+let danmaku = loadDanmaku();
+
+function saveDanmaku() {
+    if (danmakuSaveTimer) clearTimeout(danmakuSaveTimer);
+    danmakuSaveTimer = setTimeout(() => {
+        try {
+            fs.writeFileSync(DANMAKU_FILE, JSON.stringify(danmaku, null, 2), 'utf-8');
+        } catch (e) {
+            console.error('Failed to save danmaku:', e.message);
         }
     }, 1000);
 }
@@ -179,6 +207,62 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    // GET /api/danmaku?eventId=1001 — 获取某事件的弹幕（随机3条）
+    if (url.pathname === '/api/danmaku' && req.method === 'GET') {
+        const eventId = url.searchParams.get('eventId');
+        if (!eventId) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Missing eventId' }));
+            return;
+        }
+
+        const list = danmaku[String(eventId)] || [];
+        // 随机选3条
+        const shuffled = list.slice().sort(() => Math.random() - 0.5);
+        const picked = shuffled.slice(0, 3);
+
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ eventId, danmaku: picked }));
+        return;
+    }
+
+    // POST /api/danmaku — 提交弹幕 { eventId, text }
+    if (url.pathname === '/api/danmaku' && req.method === 'POST') {
+        try {
+            const body = await parseBody(req);
+            const { eventId, text } = body;
+
+            if (!eventId || !text) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Missing eventId or text' }));
+                return;
+            }
+
+            // 限制长度30字
+            const trimmed = String(text).trim().slice(0, 30);
+            if (!trimmed) {
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Empty text' }));
+                return;
+            }
+
+            const eid = String(eventId);
+            if (!danmaku[eid]) danmaku[eid] = [];
+            // 每个事件最多保存50条，超出移除最早的
+            if (danmaku[eid].length >= 50) danmaku[eid].shift();
+            danmaku[eid].push({ text: trimmed, time: Date.now() });
+
+            saveDanmaku();
+
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: true }));
+        } catch (e) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'Invalid request body' }));
+        }
+        return;
+    }
+
     // 其他请求 → 静态文件服务
     serveStatic(req, res);
 });
@@ -186,4 +270,5 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, () => {
     console.log(`🏠 租房大冒险服务器已启动: http://localhost:${PORT}`);
     console.log(`📊 投票API: GET /api/votes?eventId=xxx | POST /api/vote`);
+    console.log(`💬 弹幕API: GET /api/danmaku?eventId=xxx | POST /api/danmaku`);
 });
